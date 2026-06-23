@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KeyShifter</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #e9ece8;
+        --chrome: #f8f9f6;
+        --panel: #fcfcf8;
+        --panel-strong: #eef4ef;
+        --editor-bg: #fbfaf4;
+        --ink: #1f2421;
+        --muted: #69716c;
+        --line: #cbd2ca;
+        --line-soft: #e5e9e3;
+        --accent: #247367;
+        --accent-strong: #18564c;
+        --accent-soft: #dceeea;
+        --danger: #9b3c35;
+        --shadow: 0 10px 28px rgba(30, 38, 34, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      button,
+      .editor,
+      input {
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+      }
+
+      .app {
+        display: grid;
+        grid-template-rows: 1fr;
+        min-height: 100vh;
+        padding: 12px;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 5px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 30px;
+        min-width: 32px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #ffffff;
+        color: var(--ink);
+        padding: 0 9px;
+        cursor: pointer;
+        font-size: 0.78rem;
+        transition:
+          transform 150ms ease,
+          border-color 150ms ease,
+          background 150ms ease;
+      }
+
+      .button:hover {
+        border-color: #9fb1aa;
+        background: var(--accent-soft);
+      }
+
+      .button:active {
+        transform: translateY(1px);
+      }
+
+      .button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .button.primary:hover {
+        border-color: var(--accent-strong);
+        background: var(--accent-strong);
+      }
+
+      .button.danger {
+        color: var(--danger);
+      }
+
+      .help-dialog {
+        width: min(560px, calc(100vw - 28px));
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--ink);
+        box-shadow: 0 24px 70px rgba(22, 28, 25, 0.22);
+        padding: 0;
+      }
+
+      .help-dialog::backdrop {
+        background: rgba(31, 36, 33, 0.34);
+      }
+
+      .help-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid var(--line);
+        background: #f2f5f1;
+        padding: 10px 12px;
+      }
+
+      .help-header h2 {
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1.2;
+      }
+
+      .help-body {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+      }
+
+      .help-section {
+        border: 1px solid var(--line-soft);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.58);
+        padding: 12px;
+      }
+
+      .help-section h3 {
+        margin: 0 0 8px;
+        color: var(--accent-strong);
+        font-size: 0.76rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .help-section p {
+        margin: 0 0 10px;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.45;
+      }
+
+      .help-grid {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0;
+        margin: 0;
+        border: 1px solid var(--line-soft);
+        border-radius: 6px;
+        overflow: hidden;
+        font-size: 0.9rem;
+      }
+
+      .help-grid dt {
+        font-family: Consolas, "Courier New", monospace;
+        font-weight: 700;
+        background: var(--editor-bg);
+        border-bottom: 1px solid var(--line-soft);
+        padding: 7px 10px;
+      }
+
+      .help-grid dd {
+        margin: 0;
+        border-bottom: 1px solid var(--line-soft);
+        color: var(--muted);
+        padding: 7px 10px;
+      }
+
+      .help-grid dt:nth-last-child(2),
+      .help-grid dd:last-child {
+        border-bottom: 0;
+      }
+
+      .help-section .help-note {
+        margin: 14px 0 6px;
+      }
+
+      .help-code {
+        margin: 0;
+        border: 1px solid var(--line-soft);
+        border-radius: 6px;
+        background: var(--editor-bg);
+        padding: 10px;
+        overflow: auto;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 9pt;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        width: min(1240px, 100%);
+        min-height: 0;
+        margin: 0 auto;
+      }
+
+      .editor-wrap {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      .editor-wrap {
+        position: relative;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        min-height: calc(100vh - 24px);
+        overflow: hidden;
+      }
+
+      .editor-titlebar {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        min-height: 38px;
+        border-bottom: 1px solid var(--line);
+        background: #f2f5f1;
+        padding: 4px 8px 4px 10px;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .editor {
+        --editor-gutter: 64px;
+        --tag-rule-x: calc(var(--editor-gutter) + 2.35ch + 1px);
+        --title-offset: 10px;
+        width: 100%;
+        min-height: 100%;
+        border: 0;
+        background:
+          linear-gradient(var(--editor-bg) 0 var(--title-offset), transparent var(--title-offset)),
+          linear-gradient(
+            90deg,
+            transparent 0 var(--tag-rule-x),
+            #d7ddd4 var(--tag-rule-x) calc(var(--tag-rule-x) + 1px),
+            transparent calc(var(--tag-rule-x) + 1px)
+          ) 0 calc(var(--title-offset) + 14px) / 100% calc(100% - var(--title-offset) - 14px)
+            no-repeat,
+          repeating-linear-gradient(
+            transparent 0 13px,
+            rgba(194, 204, 196, 0.5) 13px 14px
+          ) 0 var(--title-offset) / 100% 14px repeat,
+          var(--editor-bg);
+        color: var(--ink);
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 9pt;
+        line-height: 14px;
+        overflow: auto;
+        padding: var(--title-offset) 18px 18px var(--editor-gutter);
+        tab-size: 2;
+        white-space: pre-wrap;
+        word-break: normal;
+      }
+
+      .editor:focus {
+        outline: 2px solid rgba(36, 115, 103, 0.32);
+        outline-offset: -2px;
+      }
+
+      .editor::first-line {
+        font-weight: 700;
+      }
+
+      .editor:empty::before {
+        content: attr(data-placeholder);
+        color: #8b8f8b;
+        pointer-events: none;
+        white-space: pre-wrap;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      @media (max-width: 860px) {
+        .app {
+          padding: 8px;
+        }
+
+        .workspace {
+          width: 100%;
+        }
+
+        .toolbar {
+          display: grid;
+          grid-template-columns: 34px 34px repeat(4, minmax(0, 1fr));
+          gap: 5px;
+          justify-content: stretch;
+        }
+
+        .editor-wrap {
+          min-height: calc(100vh - 16px);
+          border-radius: 6px;
+        }
+      }
+
+      @media (max-width: 520px) {
+        body {
+          background: var(--bg);
+        }
+
+        .app {
+          min-height: 100dvh;
+          padding: 6px;
+        }
+
+        .toolbar {
+          grid-template-columns: 32px 32px repeat(4, minmax(0, 1fr));
+        }
+
+        .button {
+          min-width: 0;
+          min-height: 32px;
+          padding: 0 6px;
+          border-radius: 6px;
+          font-size: 0.76rem;
+        }
+
+        .editor {
+          --editor-gutter: 18px;
+          --title-offset: 8px;
+          padding-right: 8px;
+        }
+
+        .editor-wrap {
+          min-height: calc(100dvh - 12px);
+          border-radius: 6px;
+          box-shadow: none;
+        }
+
+        .editor-titlebar {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 5px;
+          min-height: 0;
+          padding: 6px;
+        }
+
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <section class="workspace">
+        <div class="editor-wrap">
+          <div class="editor-titlebar">
+            <div class="toolbar" aria-label="Transpose controls">
+              <button class="button primary" id="transposeDownBtn" title="Transpose down">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16">
+                  <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+                </svg>
+                <span class="visually-hidden">Transpose down</span>
+              </button>
+              <button class="button primary" id="transposeUpBtn" title="Transpose up">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16">
+                  <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+                </svg>
+                <span class="visually-hidden">Transpose up</span>
+              </button>
+              <button class="button" id="copyBtn" title="Copy chart">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15">
+                  <rect x="8" y="8" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+                <span>Copy</span>
+              </button>
+              <button class="button" id="sampleBtn" title="Load sample chart">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15">
+                  <path d="M9 18V5l11-2v13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  <circle cx="6" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="2" />
+                  <circle cx="17" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="2" />
+                </svg>
+                <span>Sample</span>
+              </button>
+              <button class="button" id="helpBtn" title="Show format rules">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" />
+                  <path d="M9.6 9a2.6 2.6 0 0 1 5 1c0 1.7-1.8 2.1-2.4 3.3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                  <path d="M12 17h.01" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+                </svg>
+                <span>Help</span>
+              </button>
+              <button class="button danger" id="clearBtn" title="Clear chart">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15">
+                  <path d="M3 6h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                  <path d="M8 6V4h8v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M6 6l1 15h10l1-15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+                  <path d="M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+                <span>Clear</span>
+              </button>
+            </div>
+          </div>
+          <div
+            class="editor"
+            id="inputBox"
+            contenteditable="plaintext-only"
+            role="textbox"
+            aria-multiline="true"
+            spellcheck="false"
+            data-placeholder="TITLE&#10;&#10;K : &#10;&#10;I : &#10;&#10;V :&#10;&#10;C : &#10;&#10;B : &#10;&#10;O :"
+          ></div>
+        </div>
+      </section>
+    </main>
+
+    <dialog class="help-dialog" id="helpDialog" aria-labelledby="helpTitle">
+      <div class="help-header">
+        <h2 id="helpTitle">Format Rules</h2>
+        <button class="button" id="helpCloseBtn" title="Close help">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15">
+            <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <span class="visually-hidden">Close help</span>
+        </button>
+      </div>
+      <div class="help-body">
+        <section class="help-section">
+          <h3>Labels</h3>
+          <p>Start each song with a title, then use these labels to mark the song sections.</p>
+          <dl class="help-grid">
+            <dt>K :</dt>
+            <dd>Song Key</dd>
+            <dt>I :</dt>
+            <dd>Intro</dd>
+            <dt>V :</dt>
+            <dd>Verse</dd>
+            <dt>P :</dt>
+            <dd>Pre-chorus</dd>
+            <dt>C :</dt>
+            <dd>Chorus</dd>
+            <dt>B :</dt>
+            <dd>Bridge</dd>
+            <dt>In:</dt>
+            <dd>Instrumental</dd>
+            <dt>O :</dt>
+            <dd>Outro</dd>
+            <dt>Tr:</dt>
+            <dd>Transition</dd>
+          </dl>
+        </section>
+
+        <section class="help-section">
+          <h3>Timing</h3>
+          <p>Put timing symbols between chords to show how long to stay on each chord.</p>
+          <dl class="help-grid">
+            <dt>A ' B</dt>
+            <dd>1 count</dd>
+            <dt>A , B</dt>
+            <dd>2 counts</dd>
+            <dt>A - B</dt>
+            <dd>4 counts</dd>
+            <dt>A … B</dt>
+            <dd>8 counts</dd>
+          </dl>
+          <p class="help-note">Timing symbols can combine:</p>
+          <dl class="help-grid">
+            <dt>A ,' B</dt>
+            <dd>3 counts</dd>
+            <dt>A -, B</dt>
+            <dd>6 counts</dd>
+          </dl>
+        </section>
+
+        <section class="help-section">
+          <h3>Example</h3>
+          <p>Keep spaces between chords and timing symbols so the chart stays easy to read.</p>
+          <pre class="help-code">TITLE
+
+K : A
+
+V : D - E - D - E -
+    D - E , A/C# , D , E , A -
+
+C : A … E … D - E - A …</pre>
+        </section>
+
+        <section class="help-section">
+          <h3>Slash Chords</h3>
+          <p>
+            Use normal slash chords. The chord before the slash is the main
+            chord, and the note after the slash is the bass note.
+          </p>
+          <dl class="help-grid">
+            <dt>A/C#</dt>
+            <dd>A main chord, C# bass note</dd>
+            <dt>D/F#</dt>
+            <dd>D main chord, F# bass note</dd>
+          </dl>
+        </section>
+      </div>
+    </dialog>
+
+    <script>
+      const FLAT_NOTES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+      const SHARP_NOTES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
+      const NOTE_INDEX = {
+        Cb: 11,
+        C: 0,
+        "C#": 1,
+        Db: 1,
+        D: 2,
+        "D#": 3,
+        Eb: 3,
+        E: 4,
+        Fb: 4,
+        "E#": 5,
+        F: 5,
+        "F#": 6,
+        Gb: 6,
+        G: 7,
+        "G#": 8,
+        Ab: 8,
+        A: 9,
+        "A#": 10,
+        Bb: 10,
+        B: 11,
+        "B#": 0,
+      };
+      const FLAT_KEYS = new Set(["F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"]);
+      const CHORD_REGEX =
+        /(^|[^A-Za-z0-9#b])([A-G](?:#|b)?)([^A-G\s|/'.,…[\]{}()-]*)/g;
+      const SAMPLE_CHART = `WORTHY OF IT ALL
+
+K : A
+
+I : same as verse
+
+V : D - E - D - E -
+    D - E , A/C# , D , E , A -
+
+C : A … E … D - E - A …
+
+In: same as bridge
+
+B1: A - C#m - F#m - D -
+    A/E - E - Bm - D -
+
+B2: same as chorus`;
+      const inputBox = document.getElementById("inputBox");
+      const helpDialog = document.getElementById("helpDialog");
+      let totalShift = 0;
+
+      document.getElementById("transposeUpBtn").addEventListener("click", () => transpose(1));
+      document.getElementById("transposeDownBtn").addEventListener("click", () => transpose(-1));
+      document.getElementById("copyBtn").addEventListener("click", copyChart);
+      document.getElementById("sampleBtn").addEventListener("click", loadSample);
+      document.getElementById("helpBtn").addEventListener("click", openHelp);
+      document.getElementById("helpCloseBtn").addEventListener("click", closeHelp);
+      document.getElementById("clearBtn").addEventListener("click", clearChart);
+      helpDialog.addEventListener("click", handleHelpBackdropClick);
+      inputBox.addEventListener("input", handleEditorInput);
+      inputBox.addEventListener("paste", handlePaste);
+      window.addEventListener("keydown", handleShortcuts);
+
+      updateStats();
+
+      function transpose(direction) {
+        const amount = direction;
+        const original = cleanText(getEditorText());
+        const result = transposeText(original, amount);
+        setEditorText(result.text);
+        totalShift = normalizeShift(totalShift + amount);
+        updateStats();
+        setStatus(result.count ? `Shifted ${formatShift(amount)}.` : "No chords found to shift.");
+      }
+
+      function transposeText(text, amount) {
+        const lines = text.split("\n");
+        let count = 0;
+        const sourceKey = detectKey(text);
+        const targetKey = sourceKey
+          ? transposeNote(sourceKey, amount, getKeyAccidentals(sourceKey))
+          : "";
+        const globalAccidentals = targetKey ? getKeyAccidentals(targetKey) : "";
+        const newLines = lines.map((line, index) => {
+          if (index === 0) {
+            return line;
+          }
+
+          const tagEnd = line.indexOf(":") + 1;
+          const hasTag = tagEnd > 0;
+          const tag = hasTag ? line.slice(0, tagEnd) : "";
+          const content = hasTag ? line.slice(tagEnd) : line;
+          const transposed = transposeContent(
+            content,
+            amount,
+            globalAccidentals || getPreferredAccidentals(line)
+          );
+          count += transposed.count;
+          return tag + transposed.text;
+        });
+
+        return {
+          text: newLines.join("\n"),
+          count,
+        };
+      }
+
+      function transposeContent(content, amount, accidentalPreference) {
+        let count = 0;
+        const text = content.replace(CHORD_REGEX, (match, prefix, root, suffix) => {
+          if (!(root in NOTE_INDEX)) {
+            return match;
+          }
+
+          count += 1;
+          return prefix + transposeNote(root, amount, accidentalPreference) + suffix;
+        });
+
+        return { text, count };
+      }
+
+      function transposeNote(note, amount, accidentalPreference = "flat") {
+        const scale = accidentalPreference === "sharp" ? SHARP_NOTES : FLAT_NOTES;
+        return scale[normalizeShift(NOTE_INDEX[note] + amount)];
+      }
+
+      function getPreferredAccidentals(line) {
+        const keyMatch = line.match(/^K\s?:\s*([A-G](?:#|b)?)/);
+        if (keyMatch) {
+          return getKeyAccidentals(keyMatch[1]);
+        }
+
+        const sharpCount = (line.match(/#/g) || []).length;
+        const flatCount = (line.match(/b/g) || []).length;
+        return sharpCount > flatCount ? "sharp" : "flat";
+      }
+
+      function getKeyAccidentals(key) {
+        return FLAT_KEYS.has(key) || key.includes("b") ? "flat" : "sharp";
+      }
+
+      function handleEditorInput() {
+        updateStats();
+      }
+
+      function handlePaste(event) {
+        event.preventDefault();
+        const text = cleanText(event.clipboardData.getData("text/plain"));
+        document.execCommand("insertText", false, text);
+      }
+
+      function cleanText(value) {
+        return value
+          .replace(/\u00a0/g, " ")
+          .replace(/\r\n/g, "\n")
+          .replace(/\r/g, "\n")
+          .replace(/\.{3}/g, "…")
+          .replace(/[\u2018\u2019\u2032]/g, "'")
+          .replace(/[\u201c\u201d\u2033]/g, '"');
+      }
+
+      async function copyChart() {
+        const value = getEditorText();
+
+        if (!value.trim()) {
+          setStatus("Nothing to copy.");
+          return;
+        }
+
+        try {
+          await navigator.clipboard.writeText(value);
+          setStatus("Copied.");
+        } catch (error) {
+          selectEditorText();
+          document.execCommand("copy");
+          setStatus("Copied.");
+        }
+      }
+
+      function clearChart() {
+        setEditorText("");
+        totalShift = 0;
+        updateStats();
+        inputBox.focus();
+        setStatus("Cleared.");
+      }
+
+      function loadSample() {
+        setEditorText(SAMPLE_CHART);
+        totalShift = 0;
+        updateStats();
+        inputBox.focus();
+        setStatus("Sample loaded.");
+      }
+
+      function openHelp() {
+        helpDialog.showModal();
+      }
+
+      function closeHelp() {
+        helpDialog.close();
+      }
+
+      function handleHelpBackdropClick(event) {
+        if (event.target === helpDialog) {
+          closeHelp();
+        }
+      }
+
+      function handleShortcuts(event) {
+        if (!event.altKey || event.ctrlKey || event.metaKey) {
+          return;
+        }
+
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          transpose(1);
+        }
+
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          transpose(-1);
+        }
+      }
+
+      function updateStats() {
+        return;
+      }
+
+      function detectKey(text) {
+        const keyMatch = text.match(/^K\s?:\s*([A-G](?:#|b)?)/m);
+        return keyMatch ? keyMatch[1] : "";
+      }
+
+      function normalizeShift(value) {
+        return ((value % 12) + 12) % 12;
+      }
+
+      function formatShift(value) {
+        const normalized = ((value + 6) % 12) - 6;
+        if (normalized === 0) {
+          return "0";
+        }
+        return normalized > 0 ? `+${normalized}` : String(normalized);
+      }
+
+      function setStatus(message) {
+        inputBox.dataset.status = message;
+      }
+
+      function getEditorText() {
+        return inputBox.textContent || "";
+      }
+
+      function setEditorText(text) {
+        inputBox.textContent = text || "";
+      }
+
+      function getCaretOffset() {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+          return 0;
+        }
+
+        const range = selection.getRangeAt(0);
+        const prefix = range.cloneRange();
+        prefix.selectNodeContents(inputBox);
+        prefix.setEnd(range.endContainer, range.endOffset);
+        return prefix.toString().length;
+      }
+
+      function setCaretOffset(offset) {
+        const target = Math.max(0, offset);
+        const walker = document.createTreeWalker(inputBox, NodeFilter.SHOW_TEXT);
+        let current = 0;
+        let node = walker.nextNode();
+
+        while (node) {
+          const next = current + node.textContent.length;
+          if (target <= next) {
+            const range = document.createRange();
+            const selection = window.getSelection();
+            range.setStart(node, target - current);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            return;
+          }
+          current = next;
+          node = walker.nextNode();
+        }
+
+        inputBox.focus();
+      }
+
+      function selectEditorText() {
+        const range = document.createRange();
+        range.selectNodeContents(inputBox);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    </script>
+  </body>
+</html>
