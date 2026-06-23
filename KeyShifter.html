@@ -9,48 +9,62 @@
     <style>
       :root {
         color-scheme: light;
-        --bg: #e8eaef;
-        --chrome: #f5f6f9;
-        --panel: #fbfbfd;
-        --panel-strong: #eceef5;
-        --editor-bg: #f8f8fc;
-        --ink: #1c1e2a;
-        --muted: #636878;
-        --line: #c8cad6;
-        --line-soft: #e0e2ec;
-        --accent: #5b5fc7;
-        --accent-strong: #474bb0;
-        --accent-soft: #e4e4f6;
-        --danger: #c4392e;
-        --shadow: 0 10px 28px rgba(28, 30, 42, 0.1);
-        --titlebar-bg: #eff0f5;
-        --editor-rule: #d2d4e0;
-        --editor-line: rgba(180, 184, 206, 0.4);
-        --toast-bg: #1c1e2a;
-        --toast-ink: #f0f0f6;
+        --bg: #d9ddd5;
+        --chrome: #edf0e9;
+        --panel: #fffdf7;
+        --panel-strong: #f1efe4;
+        --editor-bg: #fffdf2;
+        --ink: #20242a;
+        --muted: #626a67;
+        --line: #c3c9bc;
+        --line-soft: #dfe3d7;
+        --accent: #4f6d74;
+        --accent-strong: #3e5960;
+        --accent-soft: #e4ebe8;
+        --danger: #9f3f45;
+        --shadow: 0 16px 38px rgba(37, 48, 45, 0.14);
+        --titlebar-bg: #f2f3ed;
+        --editor-rule: #cbd5c5;
+        --editor-line: rgba(142, 159, 147, 0.28);
+        --toast-bg: #20242a;
+        --toast-ink: #fffdf2;
+        --hover-line: #8a9a98;
+        --focus-ring: rgba(79, 109, 116, 0.3);
+        --backdrop: rgba(31, 39, 38, 0.34);
+        --dialog-shadow: 0 24px 70px rgba(37, 48, 45, 0.22);
+        --help-bg: #f6f8f4;
+        --help-heading: #4f6d74;
+        --help-list-bg: #fffdf8;
       }
 
       :root.dark {
         color-scheme: dark;
-        --bg: #111318;
-        --chrome: #181a22;
-        --panel: #1c1e28;
-        --panel-strong: #242632;
-        --editor-bg: #191b24;
-        --ink: #dcdee6;
-        --muted: #888b9a;
-        --line: #323542;
-        --line-soft: #282a36;
-        --accent: #8b8ff5;
-        --accent-strong: #a5a8ff;
-        --accent-soft: rgba(139, 143, 245, 0.12);
-        --danger: #ef5f55;
-        --shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
-        --titlebar-bg: #21232e;
-        --editor-rule: #2e3040;
-        --editor-line: rgba(50, 53, 72, 0.55);
-        --toast-bg: #dcdee6;
-        --toast-ink: #191b24;
+        --bg: #101415;
+        --chrome: #171d1f;
+        --panel: #242b2c;
+        --panel-strong: #303838;
+        --editor-bg: #151a1b;
+        --ink: #edf0e6;
+        --muted: #9ba8a2;
+        --line: #3b4849;
+        --line-soft: #2b3536;
+        --accent: #9bb8b9;
+        --accent-strong: #b2c9c9;
+        --accent-soft: rgba(155, 184, 185, 0.13);
+        --danger: #e0868c;
+        --shadow: 0 18px 46px rgba(0, 0, 0, 0.5);
+        --titlebar-bg: #2b3334;
+        --editor-rule: #334043;
+        --editor-line: rgba(76, 94, 96, 0.48);
+        --toast-bg: #edf0e6;
+        --toast-ink: #151a1b;
+        --hover-line: #748b8c;
+        --focus-ring: rgba(155, 184, 185, 0.34);
+        --backdrop: rgba(7, 10, 11, 0.64);
+        --dialog-shadow: 0 24px 70px rgba(0, 0, 0, 0.54);
+        --help-bg: #283132;
+        --help-heading: #9bb8b9;
+        --help-list-bg: #303839;
       }
 
       * {
@@ -117,7 +131,7 @@
       }
 
       .button:hover {
-        border-color: #9fb1aa;
+        border-color: var(--hover-line);
         background: var(--accent-soft);
       }
 
@@ -193,7 +207,7 @@
         border-radius: 8px;
         background: var(--panel);
         color: var(--ink);
-        box-shadow: 0 24px 70px rgba(22, 28, 25, 0.22);
+        box-shadow: var(--dialog-shadow);
         padding: 0;
         opacity: 0;
         transform: translateY(12px);
@@ -208,7 +222,7 @@
       }
 
       .help-dialog::backdrop {
-        background: rgba(31, 36, 33, 0.34);
+        background: var(--backdrop);
       }
 
       .help-header {
@@ -236,13 +250,13 @@
       .help-section {
         border: 1px solid var(--line-soft);
         border-radius: 8px;
-        background: var(--accent-soft);
+        background: var(--help-bg);
         padding: 12px;
       }
 
       .help-section h3 {
         margin: 0 0 8px;
-        color: var(--accent-strong);
+        color: var(--help-heading);
         font-size: 0.76rem;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -262,6 +276,7 @@
         margin: 0;
         border: 1px solid var(--line-soft);
         border-radius: 6px;
+        background: var(--help-list-bg);
         overflow: hidden;
         font-size: 0.9rem;
       }
@@ -269,13 +284,14 @@
       .help-grid dt {
         font-family: Consolas, "Courier New", monospace;
         font-weight: 700;
-        background: var(--editor-bg);
+        background: var(--help-list-bg);
         border-bottom: 1px solid var(--line-soft);
         padding: 7px 10px;
       }
 
       .help-grid dd {
         margin: 0;
+        background: var(--help-list-bg);
         border-bottom: 1px solid var(--line-soft);
         color: var(--muted);
         padding: 7px 10px;
@@ -390,7 +406,7 @@
       }
 
       .editor:focus {
-        outline: 2px solid rgba(36, 115, 103, 0.32);
+        outline: 2px solid var(--focus-ring);
         outline-offset: -2px;
         transition: outline-color 200ms ease;
       }
