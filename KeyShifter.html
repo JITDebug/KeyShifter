@@ -1095,7 +1095,18 @@ B2: same as chorus`;
       }
 
       function createClipboardHtml(text) {
-        return `<pre style="margin:0;white-space:pre-wrap;font-family:Consolas,'Courier New',monospace;font-size:9pt;line-height:14px;color:#20242a;">${escapeHtml(text)}</pre>`;
+        return `<pre style="margin:0;white-space:pre-wrap;font-family:Consolas,'Courier New',monospace;font-size:9pt;line-height:14px;color:#20242a;">${createStyledClipboardContent(text)}</pre>`;
+      }
+
+      function createStyledClipboardContent(text) {
+        const lineBreakIndex = text.indexOf("\n");
+        if (lineBreakIndex === -1) {
+          return `<strong>${escapeHtml(text)}</strong>`;
+        }
+
+        const title = text.slice(0, lineBreakIndex);
+        const body = text.slice(lineBreakIndex);
+        return `<strong>${escapeHtml(title)}</strong>${escapeHtml(body)}`;
       }
 
       function escapeHtml(value) {
