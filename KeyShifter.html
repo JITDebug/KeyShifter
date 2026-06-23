@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Transpose chord charts up or down instantly. Paste your chart, shift keys, and copy the result." />
     <title>KeyShifter</title>
     <style>
       :root {
@@ -22,6 +23,34 @@
         --accent-soft: #dceeea;
         --danger: #9b3c35;
         --shadow: 0 10px 28px rgba(30, 38, 34, 0.1);
+        --titlebar-bg: #f2f5f1;
+        --editor-rule: #d7ddd4;
+        --editor-line: rgba(194, 204, 196, 0.5);
+        --toast-bg: #1f2421;
+        --toast-ink: #f0f2ef;
+      }
+
+      :root.dark {
+        color-scheme: dark;
+        --bg: #141a17;
+        --chrome: #1c2420;
+        --panel: #1e2722;
+        --panel-strong: #253029;
+        --editor-bg: #1b211e;
+        --ink: #dce0da;
+        --muted: #8a9189;
+        --line: #344038;
+        --line-soft: #2a352e;
+        --accent: #4ec9b0;
+        --accent-strong: #6fe0ca;
+        --accent-soft: rgba(78, 201, 176, 0.12);
+        --danger: #e05d54;
+        --shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+        --titlebar-bg: #232e28;
+        --editor-rule: #2f3b34;
+        --editor-line: rgba(60, 78, 68, 0.45);
+        --toast-bg: #dce0da;
+        --toast-ink: #1b211e;
       }
 
       * {
@@ -76,7 +105,7 @@
         min-width: 32px;
         border: 1px solid var(--line);
         border-radius: 6px;
-        background: #ffffff;
+        background: var(--panel);
         color: var(--ink);
         padding: 0 9px;
         cursor: pointer;
@@ -96,6 +125,11 @@
         transform: translateY(1px);
       }
 
+      .button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
       .button.primary {
         border-color: var(--accent);
         background: var(--accent);
@@ -111,6 +145,48 @@
         color: var(--danger);
       }
 
+      .button.icon-only {
+        padding: 0;
+      }
+
+      /* Transpose button pulse animation */
+      @keyframes btn-pulse {
+        0% { transform: scale(1); }
+        40% { transform: scale(0.92); }
+        100% { transform: scale(1); }
+      }
+
+      .button.primary.pulse {
+        animation: btn-pulse 200ms ease;
+      }
+
+      /* Status toast */
+      .status-toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--toast-bg);
+        color: var(--toast-ink);
+        padding: 8px 18px;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 220ms ease,
+          transform 220ms ease;
+        z-index: 1000;
+      }
+
+      .status-toast.visible {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+        pointer-events: auto;
+      }
+
       .help-dialog {
         width: min(560px, calc(100vw - 28px));
         border: 1px solid var(--line);
@@ -119,6 +195,16 @@
         color: var(--ink);
         box-shadow: 0 24px 70px rgba(22, 28, 25, 0.22);
         padding: 0;
+        opacity: 0;
+        transform: translateY(12px);
+        transition:
+          opacity 200ms ease,
+          transform 200ms ease;
+      }
+
+      .help-dialog[open] {
+        opacity: 1;
+        transform: translateY(0);
       }
 
       .help-dialog::backdrop {
@@ -131,7 +217,7 @@
         justify-content: space-between;
         gap: 12px;
         border-bottom: 1px solid var(--line);
-        background: #f2f5f1;
+        background: var(--titlebar-bg);
         padding: 10px 12px;
       }
 
@@ -150,7 +236,7 @@
       .help-section {
         border: 1px solid var(--line-soft);
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.58);
+        background: var(--accent-soft);
         padding: 12px;
       }
 
@@ -226,31 +312,49 @@
       }
 
       .editor-wrap {
+        position: relative;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        min-height: calc(100vh - 24px);
+        overflow: hidden;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: var(--panel);
         box-shadow: var(--shadow);
       }
 
-      .editor-wrap {
-        position: relative;
-        display: grid;
-        grid-template-rows: auto minmax(0, 1fr);
-        min-height: calc(100vh - 24px);
-        overflow: hidden;
-      }
-
       .editor-titlebar {
         display: flex;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: space-between;
         gap: 10px;
         min-height: 38px;
         border-bottom: 1px solid var(--line);
-        background: #f2f5f1;
+        background: var(--titlebar-bg);
         padding: 4px 8px 4px 10px;
         color: var(--muted);
         font-size: 0.78rem;
+      }
+
+      .shortcut-hint {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--muted);
+        font-size: 0.72rem;
+        opacity: 0.7;
+        user-select: none;
+      }
+
+      .shortcut-hint kbd {
+        display: inline-block;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        background: var(--panel);
+        padding: 1px 5px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.7rem;
+        line-height: 1.4;
       }
 
       .editor {
@@ -265,13 +369,13 @@
           linear-gradient(
             90deg,
             transparent 0 var(--tag-rule-x),
-            #d7ddd4 var(--tag-rule-x) calc(var(--tag-rule-x) + 1px),
+            var(--editor-rule) var(--tag-rule-x) calc(var(--tag-rule-x) + 1px),
             transparent calc(var(--tag-rule-x) + 1px)
           ) 0 calc(var(--title-offset) + 14px) / 100% calc(100% - var(--title-offset) - 14px)
             no-repeat,
           repeating-linear-gradient(
             transparent 0 13px,
-            rgba(194, 204, 196, 0.5) 13px 14px
+            var(--editor-line) 13px 14px
           ) 0 var(--title-offset) / 100% 14px repeat,
           var(--editor-bg);
         color: var(--ink);
@@ -288,6 +392,11 @@
       .editor:focus {
         outline: 2px solid rgba(36, 115, 103, 0.32);
         outline-offset: -2px;
+        transition: outline-color 200ms ease;
+      }
+
+      .editor:focus-visible {
+        outline-color: var(--accent);
       }
 
       .editor::first-line {
@@ -296,9 +405,10 @@
 
       .editor:empty::before {
         content: attr(data-placeholder);
-        color: #8b8f8b;
+        color: var(--muted);
         pointer-events: none;
         white-space: pre-wrap;
+        opacity: 0.55;
       }
 
       .visually-hidden {
@@ -321,7 +431,7 @@
 
         .toolbar {
           display: grid;
-          grid-template-columns: 34px 34px repeat(4, minmax(0, 1fr));
+          grid-template-columns: 34px 34px repeat(5, minmax(0, 1fr));
           gap: 5px;
           justify-content: stretch;
         }
@@ -329,6 +439,10 @@
         .editor-wrap {
           min-height: calc(100vh - 16px);
           border-radius: 6px;
+        }
+
+        .shortcut-hint {
+          display: none;
         }
       }
 
@@ -343,7 +457,7 @@
         }
 
         .toolbar {
-          grid-template-columns: 32px 32px repeat(4, minmax(0, 1fr));
+          grid-template-columns: 32px 32px repeat(5, minmax(0, 1fr));
         }
 
         .button {
@@ -378,18 +492,22 @@
     </style>
   </head>
   <body>
+    <h1 class="visually-hidden">KeyShifter — Chord Chart Transposer</h1>
     <main class="app">
       <section class="workspace">
         <div class="editor-wrap">
           <div class="editor-titlebar">
+            <div class="shortcut-hint" aria-hidden="true">
+              <kbd>Alt</kbd>+<kbd>↑</kbd><kbd>↓</kbd> to transpose
+            </div>
             <div class="toolbar" aria-label="Transpose controls">
-              <button class="button primary" id="transposeDownBtn" title="Transpose down">
+              <button class="button primary" id="transposeDownBtn" title="Transpose down (Alt+↓)">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16">
                   <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
                 </svg>
                 <span class="visually-hidden">Transpose down</span>
               </button>
-              <button class="button primary" id="transposeUpBtn" title="Transpose up">
+              <button class="button primary" id="transposeUpBtn" title="Transpose up (Alt+↑)">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16">
                   <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
                 </svg>
@@ -418,6 +536,12 @@
                 </svg>
                 <span>Help</span>
               </button>
+              <button class="button" id="themeBtn" title="Toggle dark mode">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15" id="themeIcon">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="visually-hidden">Toggle dark mode</span>
+              </button>
               <button class="button danger" id="clearBtn" title="Clear chart">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15">
                   <path d="M3 6h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -441,6 +565,8 @@
         </div>
       </section>
     </main>
+
+    <div class="status-toast" id="statusToast" aria-live="polite" role="status"></div>
 
     <dialog class="help-dialog" id="helpDialog" aria-labelledby="helpTitle">
       <div class="help-header">
@@ -575,10 +701,22 @@ B1: A - C#m - F#m - D -
     A/E - E - Bm - D -
 
 B2: same as chorus`;
+      const STORAGE_KEY = "keyshifter-chart";
+      const THEME_KEY = "keyshifter-theme";
       const inputBox = document.getElementById("inputBox");
       const helpDialog = document.getElementById("helpDialog");
+      const statusToast = document.getElementById("statusToast");
+      const themeIcon = document.getElementById("themeIcon");
       let totalShift = 0;
+      let statusTimer = null;
+      let saveTimer = null;
 
+      // Sun SVG path for light mode icon
+      const ICON_SUN = `<circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`;
+      const ICON_MOON = `<path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+      // --- Event listeners ---
       document.getElementById("transposeUpBtn").addEventListener("click", () => transpose(1));
       document.getElementById("transposeDownBtn").addEventListener("click", () => transpose(-1));
       document.getElementById("copyBtn").addEventListener("click", copyChart);
@@ -586,20 +724,35 @@ B2: same as chorus`;
       document.getElementById("helpBtn").addEventListener("click", openHelp);
       document.getElementById("helpCloseBtn").addEventListener("click", closeHelp);
       document.getElementById("clearBtn").addEventListener("click", clearChart);
+      document.getElementById("themeBtn").addEventListener("click", toggleTheme);
       helpDialog.addEventListener("click", handleHelpBackdropClick);
       inputBox.addEventListener("input", handleEditorInput);
       inputBox.addEventListener("paste", handlePaste);
       window.addEventListener("keydown", handleShortcuts);
 
-      updateStats();
+      // --- Initialise ---
+      restoreTheme();
+      restoreChart();
 
+      // --- Core transposition (unchanged) ---
       function transpose(direction) {
         const amount = direction;
+        const caretPos = getCaretOffset();
         const original = cleanText(getEditorText());
         const result = transposeText(original, amount);
         setEditorText(result.text);
+        setCaretOffset(caretPos);
         totalShift = normalizeShift(totalShift + amount);
-        updateStats();
+        saveChart();
+
+        // Pulse the pressed button
+        const btn = direction > 0
+          ? document.getElementById("transposeUpBtn")
+          : document.getElementById("transposeDownBtn");
+        btn.classList.remove("pulse");
+        void btn.offsetWidth; // reflow to restart animation
+        btn.classList.add("pulse");
+
         setStatus(result.count ? `Shifted ${formatShift(amount)}.` : "No chords found to shift.");
       }
 
@@ -669,14 +822,23 @@ B2: same as chorus`;
         return FLAT_KEYS.has(key) || key.includes("b") ? "flat" : "sharp";
       }
 
+      // --- Editor handlers ---
       function handleEditorInput() {
-        updateStats();
+        debounceSave();
       }
 
       function handlePaste(event) {
         event.preventDefault();
         const text = cleanText(event.clipboardData.getData("text/plain"));
-        document.execCommand("insertText", false, text);
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return;
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(document.createTextNode(text));
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        inputBox.dispatchEvent(new Event("input", { bubbles: true }));
       }
 
       function cleanText(value) {
@@ -689,6 +851,7 @@ B2: same as chorus`;
           .replace(/[\u201c\u201d\u2033]/g, '"');
       }
 
+      // --- Actions ---
       async function copyChart() {
         const value = getEditorText();
 
@@ -710,15 +873,15 @@ B2: same as chorus`;
       function clearChart() {
         setEditorText("");
         totalShift = 0;
-        updateStats();
         inputBox.focus();
+        try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
         setStatus("Cleared.");
       }
 
       function loadSample() {
         setEditorText(SAMPLE_CHART);
         totalShift = 0;
-        updateStats();
+        saveChart();
         inputBox.focus();
         setStatus("Sample loaded.");
       }
@@ -753,10 +916,61 @@ B2: same as chorus`;
         }
       }
 
-      function updateStats() {
-        return;
+      // --- Theme ---
+      function toggleTheme() {
+        const isDark = document.documentElement.classList.toggle("dark");
+        updateThemeIcon(isDark);
+        try { localStorage.setItem(THEME_KEY, isDark ? "dark" : "light"); } catch (e) {}
       }
 
+      function restoreTheme() {
+        let theme = null;
+        try { theme = localStorage.getItem(THEME_KEY); } catch (e) {}
+
+        if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+          document.documentElement.classList.add("dark");
+          updateThemeIcon(true);
+        } else {
+          updateThemeIcon(false);
+        }
+      }
+
+      function updateThemeIcon(isDark) {
+        themeIcon.innerHTML = isDark ? ICON_SUN : ICON_MOON;
+      }
+
+      // --- LocalStorage persistence ---
+      function saveChart() {
+        try {
+          localStorage.setItem(STORAGE_KEY, getEditorText());
+        } catch (e) {}
+      }
+
+      function debounceSave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveChart, 400);
+      }
+
+      function restoreChart() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            setEditorText(saved);
+          }
+        } catch (e) {}
+      }
+
+      // --- Status toast ---
+      function setStatus(message) {
+        statusToast.textContent = message;
+        statusToast.classList.add("visible");
+        clearTimeout(statusTimer);
+        statusTimer = setTimeout(() => {
+          statusToast.classList.remove("visible");
+        }, 2000);
+      }
+
+      // --- Utilities ---
       function detectKey(text) {
         const keyMatch = text.match(/^K\s?:\s*([A-G](?:#|b)?)/m);
         return keyMatch ? keyMatch[1] : "";
@@ -772,10 +986,6 @@ B2: same as chorus`;
           return "0";
         }
         return normalized > 0 ? `+${normalized}` : String(normalized);
-      }
-
-      function setStatus(message) {
-        inputBox.dataset.status = message;
       }
 
       function getEditorText() {
