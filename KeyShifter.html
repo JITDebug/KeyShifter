@@ -255,11 +255,20 @@
       }
 
       .help-section h3 {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
         margin: 0 0 8px;
         color: var(--help-heading);
         font-size: 0.76rem;
         letter-spacing: 0.04em;
         text-transform: uppercase;
+      }
+
+      .section-icon {
+        width: 16px;
+        height: 16px;
+        flex: 0 0 auto;
       }
 
       .help-section p {
@@ -350,6 +359,19 @@
         padding: 4px 8px 4px 10px;
         color: var(--muted);
         font-size: 0.78rem;
+      }
+
+      .title-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: var(--panel);
+        color: var(--accent);
+        flex: 0 0 auto;
       }
 
       .shortcut-hint {
@@ -460,6 +482,10 @@
         .shortcut-hint {
           display: none;
         }
+
+        .title-mark {
+          display: none;
+        }
       }
 
       @media (max-width: 520px) {
@@ -513,6 +539,14 @@
       <section class="workspace">
         <div class="editor-wrap">
           <div class="editor-titlebar">
+            <div class="title-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="15" height="15">
+                <path d="M8 18V6l10-2v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M8 10l10-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                <circle cx="6" cy="18" r="2.5" fill="none" stroke="currentColor" stroke-width="2" />
+                <circle cx="16" cy="16" r="2.5" fill="none" stroke="currentColor" stroke-width="2" />
+              </svg>
+            </div>
             <div class="shortcut-hint" aria-hidden="true">
               <kbd>Alt</kbd>+<kbd>↑</kbd><kbd>↓</kbd> to transpose
             </div>
@@ -596,7 +630,13 @@
       </div>
       <div class="help-body">
         <section class="help-section">
-          <h3>Labels</h3>
+          <h3>
+            <svg class="section-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M5 5h14M5 12h9M5 19h11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              <path d="M17 10l2 2-2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Labels
+          </h3>
           <p>Start each song with a title, then use these labels to mark the song sections.</p>
           <dl class="help-grid">
             <dt>K :</dt>
@@ -621,7 +661,13 @@
         </section>
 
         <section class="help-section">
-          <h3>Timing</h3>
+          <h3>
+            <svg class="section-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Timing
+          </h3>
           <p>Put timing symbols between chords to show how long to stay on each chord.</p>
           <dl class="help-grid">
             <dt>A ' B</dt>
@@ -643,7 +689,13 @@
         </section>
 
         <section class="help-section">
-          <h3>Example</h3>
+          <h3>
+            <svg class="section-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M7 3h8l4 4v14H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+              <path d="M15 3v5h4M10 12h6M10 16h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Example
+          </h3>
           <p>Keep spaces between chords and timing symbols so the chart stays easy to read.</p>
           <pre class="help-code">TITLE
 
@@ -656,7 +708,13 @@ C : A … E … D - E - A …</pre>
         </section>
 
         <section class="help-section">
-          <h3>Slash Chords</h3>
+          <h3>
+            <svg class="section-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M7 17L17 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              <path d="M8 8h5M6 8h.01M11 16h5M18 16h.01" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+            </svg>
+            Slash Chords
+          </h3>
           <p>
             Use normal slash chords. The chord before the slash is the main
             chord, and the note after the slash is the bass note.
@@ -743,6 +801,7 @@ B2: same as chorus`;
       document.getElementById("themeBtn").addEventListener("click", toggleTheme);
       helpDialog.addEventListener("click", handleHelpBackdropClick);
       inputBox.addEventListener("input", handleEditorInput);
+      inputBox.addEventListener("copy", handleEditorCopy);
       inputBox.addEventListener("paste", handlePaste);
       window.addEventListener("keydown", handleShortcuts);
 
@@ -843,6 +902,17 @@ B2: same as chorus`;
         debounceSave();
       }
 
+      function handleEditorCopy(event) {
+        const selection = window.getSelection();
+        const text = selection ? selection.toString() : "";
+        if (!text) {
+          return;
+        }
+
+        event.preventDefault();
+        setStyledClipboardData(event.clipboardData, text);
+      }
+
       function handlePaste(event) {
         event.preventDefault();
         const text = cleanText(event.clipboardData.getData("text/plain"));
@@ -877,7 +947,7 @@ B2: same as chorus`;
         }
 
         try {
-          await navigator.clipboard.writeText(value);
+          await writeStyledClipboard(value);
           setStatus("Copied.");
         } catch (error) {
           selectEditorText();
@@ -1004,8 +1074,40 @@ B2: same as chorus`;
         return normalized > 0 ? `+${normalized}` : String(normalized);
       }
 
+      async function writeStyledClipboard(text) {
+        if (navigator.clipboard.write && window.ClipboardItem) {
+          const html = createClipboardHtml(text);
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              "text/plain": new Blob([text], { type: "text/plain" }),
+              "text/html": new Blob([html], { type: "text/html" }),
+            }),
+          ]);
+          return;
+        }
+
+        await navigator.clipboard.writeText(text);
+      }
+
+      function setStyledClipboardData(clipboardData, text) {
+        clipboardData.setData("text/plain", text);
+        clipboardData.setData("text/html", createClipboardHtml(text));
+      }
+
+      function createClipboardHtml(text) {
+        return `<pre style="margin:0;white-space:pre-wrap;font-family:Consolas,'Courier New',monospace;font-size:9pt;line-height:14px;color:#20242a;">${escapeHtml(text)}</pre>`;
+      }
+
+      function escapeHtml(value) {
+        return value
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
       function getEditorText() {
-        return inputBox.textContent || "";
+        return inputBox.innerText || "";
       }
 
       function setEditorText(text) {
